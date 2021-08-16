@@ -1,8 +1,8 @@
 # Get-DuplicatePhotos
 
-This script locates duplicate image files between two sets of folders (source vs other).
+A script to locate duplicate image files between two sets of folders (e.g. Camera Roll folders vs other folders).
 
-It is fairly normal to copy images from your Camera Roll from instance, and then leave traces of those edited copies around after modifying them. This script helps to locate those duplicates, assuming they still have their original the image metadata (i.e. `Date Taken`).
+It is fairly common, for instance, to copy image files from your Camera Roll, and then leave traces of those edited copies around after modifying them. This script helps to locate those duplicates, assuming that they still have their original the image metadata (i.e. `Date Taken`).
 
 ## How it works
 
