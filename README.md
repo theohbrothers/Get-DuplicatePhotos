@@ -1,5 +1,8 @@
 # Get-DuplicatePhotos
 
+[![github-actions](https://github.com/theohbrothers/Get-DuplicatePhotos/workflows/ci-master-pr/badge.svg)](https://github.com/theohbrothers/Get-DuplicatePhotos/actions)
+[![github-release](https://img.shields.io/github/v/release/theohbrothers/Get-DuplicatePhotos?style=flat-square)](https://github.com/theohbrothers/Get-DuplicatePhotos/releases/)
+
 A script to locate duplicate image files between two sets of folders (e.g. Camera Roll folders vs other folders).
 
 It is fairly common, for instance, to copy image files from your Camera Roll, and then leave traces of those edited copies around after modifying them. This script helps to locate those duplicates, assuming that they still have their original the image metadata (i.e. `Date Taken`).
