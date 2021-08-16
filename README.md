@@ -2,7 +2,7 @@
 
 This script locates duplicate image files between two sets of folders (source vs other).
 
-It is fairly normal to copy images from your Camera Roll from instance, and then leave traces of copies around after modifying them. This script helps to identify those duplicates.
+It is fairly normal to copy images from your Camera Roll from instance, and then leave traces of those edited copies around after modifying them. This script helps to locate those duplicates, assuming they still have their original the image metadata (i.e. `Date Taken`).
 
 ## How it works
 
