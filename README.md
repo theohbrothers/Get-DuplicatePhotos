@@ -6,9 +6,9 @@ It is fairly common, for instance, to copy image files from your Camera Roll, an
 
 ## How it works
 
-- The default duplicate criteria is to match only by `Date Taken` image attribute normalized to UTC (i.e. '2021-01-01 00:11:22').
+- The default duplicate criteria is to match only by `Date Taken` image attribute normalized to UTC (e.g. `2021-01-01T00:11:22`).
     - Choose whether the duplicate criteria should also include file size and file hash.
-- Searches two groups of folders (i.e. source and other) for image files with 'Date Taken' attribute.
+- Searches two groups of folders (i.e. source and other) for image files with `Date Taken` attribute.
 - Compares files of the two groups of folders, identifying duplicates using the criteria you defined
 - Finally, exports duplicates into a `duplicates.json` file.
 
