@@ -20,30 +20,15 @@ Describe the unexpected behavior.
 
 ## Environment
 
-**Output of Configuration**
-
-For example:
+**Configuration**
 
 ```powershell
-Configuration:
-dryRun: 1
-notesdestpath: C:\temp\notes
-targetNotebook: test
-usedocx: 2
-keepdocx: 2
-docxNamingConvention: 1
-prefixFolders: 1
-medialocation: 1
-conversion: markdown-simple_tables-multiline_tables-grid_tables+pipe_tables-fenced_code_attributes-inline_code_attributes-fenced_code_attributes
-headerTimestampEnabled: 1
-keepspaces: 1
-keepescape: 2
-newlineCharacter: 2
+$somevariable = 'foo'
+$somevariable2 = 'bar'
+$somevariable3 = 'baz'
 ```
 
-**Output of `$PSVersionTable`**
-
-For example:
+**`$PSVersionTable`**
 
 ```powershell
 PS > $PSVersionTable
