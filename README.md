@@ -30,7 +30,7 @@ For DateTaken-only criteria, the key is `DateTaken`, where `DateTaken` is in [`I
 }
 ```
 
-For DateTaken, length, and file hash criteria, the key is `DateTaken-Length-FileHash`, where `DateTaken` is in [`ISO 8601`](https://www.iso.org/iso-8601-date-and-time-format.html) format, `Length` is a integer in bytes, and `FileHash`is an `MD5` hash value.
+For DateTaken, length, and file hash criteria, the key is `DateTaken-Length-FileHash`, where `DateTaken` is in [`ISO 8601`](https://www.iso.org/iso-8601-date-and-time-format.html) format, `Length` is a integer in bytes, and `FileHash`is an `SHA256` hash value.
 
 ```json
 {

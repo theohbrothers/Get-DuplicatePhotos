@@ -42,7 +42,7 @@ function Get-FileMetaData {
             Length = $f.Length
             CreationTimeUtc = $f.CreationTimeUtc
             LastWriteTimeUtc = $f.LastWriteTimeUtc
-            # Hash = (Get-FileHash -Path $f.FullName -Algorithm MD5).Hash
+            # Hash = (Get-FileHash -Path $f.FullName -Algorithm SHA256).Hash
             DateTaken = & {
                 try {
                     # Improved version of https://stackoverflow.com/questions/6834259/how-can-i-get-programmatic-access-to-the-date-taken-field-of-an-image-or-video
@@ -160,8 +160,8 @@ if ($criteriaStrict) {
                 continue # Ignore the same file!
             }
             "`nComparing $( $f1.FullName ) and $( $f2.FullName ) of date taken: $k" | Write-Host
-            $h1 = Get-FileHash -Path $f1.FullName -Algorithm MD5 -ErrorAction Continue | Select-Object -ExpandProperty 'Hash'
-            $h2 = Get-FileHash -Path $f2.FullName -Algorithm MD5 -ErrorAction Continue | Select-Object -ExpandProperty 'Hash'
+            $h1 = Get-FileHash -Path $f1.FullName -Algorithm SHA256 -ErrorAction Continue | Select-Object -ExpandProperty 'Hash'
+            $h2 = Get-FileHash -Path $f2.FullName -Algorithm SHA256 -ErrorAction Continue | Select-Object -ExpandProperty 'Hash'
             if ( ($f1.Length -eq $f2.Length) -and ($h1 -eq $h2) ) {
                 "File $( $f2.FullName ) is a duplicate of $( $f1.FullName ), Date taken: $( $f1.DateTaken ), length: $( $f1.Length ), hash: $( $h1 )" | Write-Host -ForegroundColor Green
                 # Construct an object that organizes the duplicates by DateTaken
