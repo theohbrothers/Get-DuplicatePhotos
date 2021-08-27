@@ -49,10 +49,11 @@ function Get-FileMetaData {
                     $p = New-Object System.Drawing.Bitmap $f.FullName
                     $byteArray =  $p.GetPropertyItem(36867).Value
                     $dateTakenString = [System.Text.Encoding]::ASCII.GetString( $byteArray[0..18] )
-                    $dateTakenDateTime = [datetime]::ParseExact($dateTakenString, "yyyy:MM:dd HH:mm:ss", $null).ToUniversalTime()
+                    $dateTakenDateTime = [datetime]::ParseExact($dateTakenString, "yyyy:MM:dd HH:mm:ss", $null)
+                    $dateIso = Get-Date $dateTakenDateTime -Format 'yyyy-MM-dd HH:mm:sszz00'
                 }catch {
                     "Ignoring file $( $f.FullName ) without a Date Taken attribute. Reason: $( $_ )"| Write-Warning
-                    $dateTakenDateTime = $null
+                    $dateIso = $null
                 }
 
                 # Doesn't get Date taken
@@ -62,8 +63,7 @@ function Get-FileMetaData {
                 # $property = 'Date taken'
                 # for( $index = 5; $directoryObject.GetDetailsOf( $directoryObject.Items, $index ) -ne $property; ++$index ) { }
                 # $value = $directoryObject.GetDetailsOf( $fileObject, $index )
-
-                $dateTakenDateTime
+                $dateIso
             }
         }
     }
@@ -120,7 +120,7 @@ function Get-FileObjectsWithMetaData([string[]]$dirs, [string]$jsonFile) {
     $h = [ordered]@{}
     foreach ($f in $files) {
         if ($f.DateTaken) {
-            $h["$( Get-Date $f.DateTaken -Format 's' )"] = $f
+            $h[$f.DateTaken] = $f
         }
     }
 
@@ -206,7 +206,7 @@ if ($criteriaStrict) {
 "There were $( $dups.Count ) duplicates found." | Write-Host -ForegroundColor Green
 
 # Export the duplicates to json
-$jsonFile = "$PWD/duplicates.json"
+$jsonFile = Join-Path $PWD "duplicates.json"
 $dups | ConvertTo-Json -Depth 100 | Out-File $jsonFile -Encoding utf8
 "Exporting duplicates to $jsonFile" | Write-Host -ForegroundColor Green
 
