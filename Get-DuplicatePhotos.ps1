@@ -1,5 +1,3 @@
-# Edit script settings
-
 # Specify source directories.
 $sourceDirs = @(
     # 'C:\path\to\Camera Roll'
@@ -9,6 +7,10 @@ $sourceDirs = @(
 # Specify other directories (i.e. directories that might contain duplicates).
 $otherDirs = @(
     # May be the same as source directories (if you are looking for duplicates within only source directories).
+    # 'C:\path\to\Camera Roll'
+    # 'C:\path\to\Camera Roll 2'
+
+    # Or else specify other folders
     # 'C:\path\to\other folder'
     # 'C:\path\to\other folder 2'
 )
