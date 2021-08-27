@@ -50,7 +50,7 @@ function Get-FileMetaData {
                     $byteArray =  $p.GetPropertyItem(36867).Value
                     $dateTakenString = [System.Text.Encoding]::ASCII.GetString( $byteArray[0..18] )
                     $dateTakenDateTime = [datetime]::ParseExact($dateTakenString, "yyyy:MM:dd HH:mm:ss", $null)
-                    $dateIso = Get-Date $dateTakenDateTime -Format 'yyyy-MM-dd HH:mm:sszz00'
+                    $dateIso = Get-Date $dateTakenDateTime -Format 'yyyy-MM-ddTHH:mm:sszz00'
                 }catch {
                     "Ignoring file $( $f.FullName ) without a Date Taken attribute. Reason: $( $_ )"| Write-Warning
                     $dateIso = $null
