@@ -145,56 +145,56 @@ $otherJsonFile = if ($exportCacheAsJson) {[io.path]::combine($PWD, 'other.json')
 
 # Get objects in source group
 "Processing source directories" | Write-Host -ForegroundColor Green
-$filesS = Get-FileObjectsWithMetaData -dirs $sourceDirs -jsonFile $sourceJsonFile
+$sourceFiles = Get-FileObjectsWithMetaData -dirs $sourceDirs -jsonFile $sourceJsonFile
 # Get objects in other group
 "Processing other directories" | Write-Host -ForegroundColor Green
-$filesO = Get-FileObjectsWithMetaData -dirs $otherDirs -jsonFile $otherJsonFile
+$otherFiles = Get-FileObjectsWithMetaData -dirs $otherDirs -jsonFile $otherJsonFile
 
 $dups = [ordered]@{}
 if ($criteriaStrict) {
-    foreach ($k in @( $filesS.Keys )) {
-        if ($filesO.Contains($k)) {
-            $f1 = $filesS[$k] # Source
-            $f2 = $filesO[$k] # Duplicate
-            if ($f1.FullName -eq $f2.FullName) {
+    foreach ($k in @( $sourceFiles.Keys )) {
+        if ($otherFiles.Contains($k)) {
+            $s = $sourceFiles[$k] # Source
+            $o = $otherFiles[$k] # Duplicate
+            if ($s.FullName -eq $o.FullName) {
                 continue # Ignore the same file!
             }
-            "`nComparing $( $f1.FullName ) and $( $f2.FullName ) of date taken: $k" | Write-Host
-            $h1 = Get-FileHash -Path $f1.FullName -Algorithm SHA256 -ErrorAction Continue | Select-Object -ExpandProperty 'Hash'
-            $h2 = Get-FileHash -Path $f2.FullName -Algorithm SHA256 -ErrorAction Continue | Select-Object -ExpandProperty 'Hash'
-            if ( ($f1.Length -eq $f2.Length) -and ($h1 -eq $h2) ) {
-                "File $( $f2.FullName ) is a duplicate of $( $f1.FullName ), Date taken: $( $f1.DateTaken ), length: $( $f1.Length ), hash: $( $h1 )" | Write-Host -ForegroundColor Green
+            "`nComparing $( $s.FullName ) and $( $o.FullName ) of date taken: $k" | Write-Host
+            $h1 = Get-FileHash -Path $s.FullName -Algorithm SHA256 -ErrorAction Continue | Select-Object -ExpandProperty 'Hash'
+            $h2 = Get-FileHash -Path $o.FullName -Algorithm SHA256 -ErrorAction Continue | Select-Object -ExpandProperty 'Hash'
+            if ( ($s.Length -eq $o.Length) -and ($h1 -eq $h2) ) {
+                "File $( $o.FullName ) is a duplicate of $( $s.FullName ), Date taken: $( $s.DateTaken ), length: $( $s.Length ), hash: $( $h1 )" | Write-Host -ForegroundColor Green
                 # Construct an object that organizes the duplicates by DateTaken
-                $newKey = "$k-$( $f1.Length )-$h1" # The hashtable key will be <DateTaken>-<Length>-<FileHash>. Value will be all matching files including the source file
+                $newKey = "$k-$( $s.Length )-$h1" # The hashtable key will be <DateTaken>-<Length>-<FileHash>. Value will be all matching files including the source file
                 if (!$dups.Contains($newKey)) {
-                    $dups[$newKey] = @( $f1.FullName ) # Source file is always the first object in the array
+                    $dups[$newKey] = @( $s.FullName ) # Source file is always the first object in the array
                 }
-                $dups[$newKey] += $f2.FullName # Add duplicate file to array
+                $dups[$newKey] += $o.FullName # Add duplicate file to array
                 $dups[$newKey] = @(
                     $dups[$newKey] | Select-Object -Unique # Ensure items are unique in array
                 )
             }else {
-                "File $( $f2.FullName ) is not a duplicate of $( $f1.FullName ). Same date taken, but different length and file hash." | Write-Host -ForegroundColor Gray
+                "File $( $o.FullName ) is not a duplicate of $( $s.FullName ). Same date taken, but different length and file hash." | Write-Host -ForegroundColor Gray
             }
         }else {
             "No duplicate found for date taken: $k" | Write-Host -ForegroundColor Gray
         }
     }
 }else {
-    foreach ($k in @( $filesS.Keys )) {
-        if ($filesO.Contains($k)) {
-            $f1 = $filesS[$k] # Source
-            $f2 = $filesO[$k] # Duplicate
-            if ($f1.FullName -eq $f2.FullName) {
+    foreach ($k in @( $sourceFiles.Keys )) {
+        if ($otherFiles.Contains($k)) {
+            $s = $sourceFiles[$k] # Source
+            $o = $otherFiles[$k] # Duplicate
+            if ($s.FullName -eq $o.FullName) {
                 continue # Ignore the same file!
             }
-            "`nComparing $( $f1.FullName ) and $( $f2.FullName ) of date taken: $k" | Write-Host
-            "File $( $f2.FullName ) is a duplicate of $( $f1.FullName ). Date taken: $( $f1.DateTaken )" | Write-Host -ForegroundColor Green
+            "`nComparing $( $s.FullName ) and $( $o.FullName ) of date taken: $k" | Write-Host
+            "File $( $o.FullName ) is a duplicate of $( $s.FullName ). Date taken: $( $s.DateTaken )" | Write-Host -ForegroundColor Green
             # Construct an object that organizes the duplicates by DateTaken
             if (!$dups.Contains($k)) {
-                $dups[$k] = @( $f1.FullName ) # Source file is always the first object in the array
+                $dups[$k] = @( $s.FullName ) # Source file is always the first object in the array
             }
-            $dups[$k] += $f2.FullName # Add duplicate file to array
+            $dups[$k] += $o.FullName # Add duplicate file to array
             $dups[$k] = @(
                 $dups[$k] | Select-Object -Unique # Ensure items are unique in array
             )
