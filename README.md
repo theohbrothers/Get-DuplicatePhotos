@@ -9,7 +9,7 @@ It is fairly common, for instance, to copy image files from your Camera Roll, an
 
 ## How it works
 
-- The default duplicate criteria is to match only by `Date Taken` image attribute normalized to UTC (e.g. `2021-01-01T00:11:22`).
+- The default duplicate criteria is to match only by `Date Taken` (e.g. `2021-01-01T00:11:22+0000`).
     - Choose whether the duplicate criteria should also include file size and file hash.
 - Searches two groups of folders (i.e. source and other) for image files with `Date Taken` attribute.
 - Compares files of the two groups of folders, identifying duplicates using the criteria you defined
@@ -21,7 +21,7 @@ For DateTaken-only criteria, the key is `DateTaken`, where `DateTaken` is in [`I
 
 ```json
 {
-    "2021-01-01T00:11:22": [
+    "2021-01-01T00:11:22+0000": [
         "C:\\path\\to\\Camera Roll\\source.jpg", // The first file is the source file.
         "C:\\path\\to\\other folder\\duplicate.jpg", // The rest are duplicates.
         ...
@@ -34,7 +34,7 @@ For DateTaken, length, and file hash criteria, the key is `DateTaken-Length-File
 
 ```json
 {
-    "2021-01-01T00:11:22-1234567-XXXXXXXXXX": [
+    "2021-01-01T00:11:22+0000-1234567-XXXXXXXXXX": [
         "C:\\path\\to\\Camera Roll\\source.jpg", // The first file is the source file.
         "C:\\path\\to\\other folder\\duplicate.jpg", // The rest are duplicates.
         ...
