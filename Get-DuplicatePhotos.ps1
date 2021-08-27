@@ -6,8 +6,9 @@ $sourceDirs = @(
     # 'C:\path\to\Camera Roll 2'
 )
 
-# Specify other directories (i.e. directories that might contain duplicates). Must be distinct from source directories.
+# Specify other directories (i.e. directories that might contain duplicates).
 $otherDirs = @(
+    # May be the same as source directories (if you are looking for duplicates within only source directories).
     # 'C:\path\to\other folder'
     # 'C:\path\to\other folder 2'
 )
@@ -17,9 +18,9 @@ $otherDirs = @(
 # 1 - Enable
 $exportCacheAsJson = 0
 
-# Whether duplicate criteria should also include file size and file hash.
-# 0 - Disable (Only consider Date Taken)
-# 1 - Enable (Consider Date Taken, file size, file hash)
+# Specify the duplicate criteria.
+# 0 - Date Taken
+# 1 - Date Taken, file size, and file hash
 $criteriaStrict = 0
 
 function Get-FileMetaData {
@@ -144,7 +145,7 @@ if ($sourceDirs.Count -eq 0) {
     "No source directories specified." | Write-Warning
     return
 }
-$otherDirs = @( $otherDirs | ? { $_ -notin $sourceDirs } | % { $_.Trim() } | ? { $_ } )
+$otherDirs = @( $otherDirs | % { $_.Trim() } | ? { $_ } )
 if ($otherDirs.Count -eq 0) {
     "No other directories specified. Ensure other directories entries are distinct from source directories." | Write-Warning
     return
