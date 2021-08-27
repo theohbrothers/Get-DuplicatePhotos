@@ -23,20 +23,21 @@ $exportCacheAsJson = 0
 $criteriaStrict = 0
 
 function Get-FileMetaData {
-    [cmdletbinding()]
+    [CmdletBinding()]
     Param (
-        [parameter(valuefrompipeline,ValueFromPipelineByPropertyName,Position=1,Mandatory)]
-        [alias('Path','FullName')]
-        [System.IO.FileInfo]$f
+        [Parameter(ValueFromPipeline,ValueFromPipelineByPropertyName,Mandatory)]
+        [System.IO.FileInfo]$FileInfo
     )
 
     begin {
         Add-Type -AssemblyName System.Drawing
     }
     process {
+        $f = $FileInfo
         "Processing file: $( $f.FullName )" | Write-Host
+
         # Construct a customobject
-        [PSCustomObject]@{
+        $o = [ordered]@{
             FullName = $f.FullName
             Name = $f.Name
             Length = $f.Length
@@ -63,9 +64,13 @@ function Get-FileMetaData {
                 # $property = 'Date taken'
                 # for( $index = 5; $directoryObject.GetDetailsOf( $directoryObject.Items, $index ) -ne $property; ++$index ) { }
                 # $value = $directoryObject.GetDetailsOf( $fileObject, $index )
+
                 $dateIso
             }
         }
+        $o['key'] = $o.DateTaken
+
+        $o -as [PSCustomObject] # Send this immediately down the pipeline
     }
 }
 
@@ -101,30 +106,34 @@ function Get-FileMetaData {
 #     }
 # }
 
-function Get-FileObjectsWithMetaData([string[]]$dirs, [string]$jsonFile) {
+function Get-ChildItemWithMetaData {
+    [CmdletBinding()]
+    Param (
+        [Parameter(ValueFromPipeline,ValueFromPipelineByPropertyName,Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $Path
+    ,
+        [Parameter()]
+        [string]
+        $JsonFile
+    )
+
     # Get file objects from an existing .json, or else create the file objects
-    $files = if ($jsonFile -and (Test-Path $jsonFile)) {
-        Get-Content $jsonFile -raw -ErrorAction Stop | ConvertFrom-Json | Sort-Object -Property FullName
-        "Reusing file object cache: $jsonFile" | Write-Host -ForegroundColor Green
+    $files = if ($JsonFile -and (Test-Path $JsonFile)) {
+        Get-Content $JsonFile -raw -ErrorAction Stop | ConvertFrom-Json | Sort-Object -Property FullName
+        "Reusing file object cache: $JsonFile" | Write-Host -ForegroundColor Green
     }else {
-        Get-ChildItem -Path $dirs -Recurse -File -Force -ErrorAction Stop | Get-FileMetaData | Sort-Object -Property FullName
+        Get-ChildItem -Path $Path -Recurse -File -Force -ErrorAction Stop | Get-FileMetaData | Sort-Object -Property FullName
     }
 
     # Export to json file
-    if ($jsonFile) {
-        $files | ConvertTo-Json -Depth 100 | Out-File $jsonFile -encoding utf8
-        "Exporting objects to $jsonFile" | Write-Host -ForegroundColor Green
+    if ($JsonFile) {
+        $files | ConvertTo-Json -Depth 100 | Out-File $JsonFile -encoding utf8
+        "Exporting objects to $JsonFile" | Write-Host -ForegroundColor Green
     }
 
-    # Build a nice hashtable so searching by date taken is fast
-    $h = [ordered]@{}
-    foreach ($f in $files) {
-        if ($f.DateTaken) {
-            $h[$f.DateTaken] = $f
-        }
-    }
-
-    $h
+    $files
 }
 
 Set-StrictMode -Version Latest
@@ -144,37 +153,60 @@ $sourceJsonFile = if ($exportCacheAsJson) { [io.path]::combine($PWD, 'source.jso
 $otherJsonFile = if ($exportCacheAsJson) {[io.path]::combine($PWD, 'other.json') } else { '' }
 
 # Get objects in source group
-"Processing source directories" | Write-Host -ForegroundColor Green
-$sourceFiles = Get-FileObjectsWithMetaData -dirs $sourceDirs -jsonFile $sourceJsonFile
+$sourceFiles = [ordered]@{}
+$sourceDirs | ForEach-Object {
+    "`nProcessing source directory $( $_ )" | Write-Host -ForegroundColor Cyan
+    Get-ChildItemWithMetaData -Path $_ -JsonFile $sourceJsonFile | % {
+        $s = $_
+        if (! $sourceFiles.Contains($s.key)) {
+            $sourceFiles[$s.key] = $s # There may only be one unique source file
+        }else {
+            "Ignoring a duplicate file in source directory. file: `n$( $sourceFiles[$s.key].FullName ), duplicate: $( $s.FullName )" | Write-Verbose
+        }
+    }
+}
 # Get objects in other group
-"Processing other directories" | Write-Host -ForegroundColor Green
-$otherFiles = Get-FileObjectsWithMetaData -dirs $otherDirs -jsonFile $otherJsonFile
+$otherFiles = [ordered]@{}
+$otherDirs | ForEach-Object {
+    "`nProcessing other directory $( $_ )" | Write-Host -ForegroundColor Cyan
+    Get-ChildItemWithMetaData -Path $_ -JsonFile $sourceJsonFile | % {
+        $o = $_
+        if (! $otherFiles.Contains($o.key)) {
+            $otherFiles[$o.key] = @() # There may be more than one other file
+        }
+        $otherFiles[$o.key] += $o
+    }
+}
 
 $dups = [ordered]@{}
 foreach ($k in @( $sourceFiles.Keys )) {
     if ($otherFiles.Contains($k)) {
         $s = $sourceFiles[$k] # Source
-        $o = $otherFiles[$k] # Duplicate
-        if ($s.FullName -ne $o.FullName) {
-            "`nComparing $( $s.FullName ) and $( $o.FullName ) of date taken: $k" | Write-Host
-            if ($criteriaStrict) {
-                $h1 = Get-FileHash -Path $s.FullName -Algorithm SHA256 -ErrorAction Continue | Select-Object -ExpandProperty 'Hash'
-                $h2 = Get-FileHash -Path $o.FullName -Algorithm SHA256 -ErrorAction Continue | Select-Object -ExpandProperty 'Hash'
-                if ( ($s.Length -eq $o.Length) -and ($h1 -eq $h2) ) {
-                    "File $( $o.FullName ) is a duplicate of $( $s.FullName ), Date taken: $( $s.DateTaken ), length: $( $s.Length ), hash: $( $h1 )" | Write-Host -ForegroundColor Green
-                    $k = "$k-$( $s.Length )-$h1" # The hashtable key will be <DateTaken>-<Length>-<FileHash>. Value will be all matching files including the source file
+        foreach ($o in $otherFiles[$k]) {
+            if ($s.FullName -ne $o.FullName) {
+                $key = $k
+                "`nComparing $( $s.FullName ) and $( $o.FullName ) of date taken: $k" | Write-Host
+                if ($criteriaStrict) {
+                    $h1 = Get-FileHash -Path $s.FullName -Algorithm SHA256 -ErrorAction Continue | Select-Object -ExpandProperty 'Hash'
+                    $h2 = Get-FileHash -Path $o.FullName -Algorithm SHA256 -ErrorAction Continue | Select-Object -ExpandProperty 'Hash'
+                    if ( ($s.Length -eq $o.Length) -and ($h1 -eq $h2) ) {
+                        "File $( $o.FullName ) is a duplicate of $( $s.FullName ), Date taken: $( $s.DateTaken ), length: $( $s.Length ), hash: $( $h1 )" | Write-Host -ForegroundColor Green
+                        $key = "$key-$( $s.Length )-$h1" # The hashtable key will be <DateTaken>-<Length>-<FileHash>. Value will be all matching files including the source file
+                    }else {
+                        continue
+                    }
+                }else {
+                    "File $( $o.FullName ) is a duplicate of $( $s.FullName ). Date taken: $( $s.DateTaken )" | Write-Host -ForegroundColor Green
                 }
-            }else {
-                "File $( $o.FullName ) is a duplicate of $( $s.FullName ). Date taken: $( $s.DateTaken )" | Write-Host -ForegroundColor Green
+                # Construct an object that organizes the duplicates by DateTaken
+                if (!$dups.Contains($key)) {
+                    $dups[$key] = @( $s.FullName ) # Source file is always the first object in the array
+                }
+                $dups[$key] += $o.FullName # Add duplicate file to array
+                $dups[$key] = @(
+                    $dups[$key] | Select-Object -Unique # Ensure items are unique in array
+                )
             }
-            # Construct an object that organizes the duplicates by DateTaken
-            if (!$dups.Contains($k)) {
-                $dups[$k] = @( $s.FullName ) # Source file is always the first object in the array
-            }
-            $dups[$k] += $o.FullName # Add duplicate file to array
-            $dups[$k] = @(
-                $dups[$k] | Select-Object -Unique # Ensure items are unique in array
-            )
         }
     }else {
         "No duplicate found for date taken: $k" | Write-Host -ForegroundColor Gray
