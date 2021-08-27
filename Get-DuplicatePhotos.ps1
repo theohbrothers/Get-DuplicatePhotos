@@ -151,45 +151,22 @@ $sourceFiles = Get-FileObjectsWithMetaData -dirs $sourceDirs -jsonFile $sourceJs
 $otherFiles = Get-FileObjectsWithMetaData -dirs $otherDirs -jsonFile $otherJsonFile
 
 $dups = [ordered]@{}
-if ($criteriaStrict) {
-    foreach ($k in @( $sourceFiles.Keys )) {
-        if ($otherFiles.Contains($k)) {
-            $s = $sourceFiles[$k] # Source
-            $o = $otherFiles[$k] # Duplicate
-            if ($s.FullName -eq $o.FullName) {
-                continue # Ignore the same file!
-            }
+foreach ($k in @( $sourceFiles.Keys )) {
+    if ($otherFiles.Contains($k)) {
+        $s = $sourceFiles[$k] # Source
+        $o = $otherFiles[$k] # Duplicate
+        if ($s.FullName -ne $o.FullName) {
             "`nComparing $( $s.FullName ) and $( $o.FullName ) of date taken: $k" | Write-Host
-            $h1 = Get-FileHash -Path $s.FullName -Algorithm SHA256 -ErrorAction Continue | Select-Object -ExpandProperty 'Hash'
-            $h2 = Get-FileHash -Path $o.FullName -Algorithm SHA256 -ErrorAction Continue | Select-Object -ExpandProperty 'Hash'
-            if ( ($s.Length -eq $o.Length) -and ($h1 -eq $h2) ) {
-                "File $( $o.FullName ) is a duplicate of $( $s.FullName ), Date taken: $( $s.DateTaken ), length: $( $s.Length ), hash: $( $h1 )" | Write-Host -ForegroundColor Green
-                # Construct an object that organizes the duplicates by DateTaken
-                $newKey = "$k-$( $s.Length )-$h1" # The hashtable key will be <DateTaken>-<Length>-<FileHash>. Value will be all matching files including the source file
-                if (!$dups.Contains($newKey)) {
-                    $dups[$newKey] = @( $s.FullName ) # Source file is always the first object in the array
+            if ($criteriaStrict) {
+                $h1 = Get-FileHash -Path $s.FullName -Algorithm SHA256 -ErrorAction Continue | Select-Object -ExpandProperty 'Hash'
+                $h2 = Get-FileHash -Path $o.FullName -Algorithm SHA256 -ErrorAction Continue | Select-Object -ExpandProperty 'Hash'
+                if ( ($s.Length -eq $o.Length) -and ($h1 -eq $h2) ) {
+                    "File $( $o.FullName ) is a duplicate of $( $s.FullName ), Date taken: $( $s.DateTaken ), length: $( $s.Length ), hash: $( $h1 )" | Write-Host -ForegroundColor Green
+                    $k = "$k-$( $s.Length )-$h1" # The hashtable key will be <DateTaken>-<Length>-<FileHash>. Value will be all matching files including the source file
                 }
-                $dups[$newKey] += $o.FullName # Add duplicate file to array
-                $dups[$newKey] = @(
-                    $dups[$newKey] | Select-Object -Unique # Ensure items are unique in array
-                )
             }else {
-                "File $( $o.FullName ) is not a duplicate of $( $s.FullName ). Same date taken, but different length and file hash." | Write-Host -ForegroundColor Gray
+                "File $( $o.FullName ) is a duplicate of $( $s.FullName ). Date taken: $( $s.DateTaken )" | Write-Host -ForegroundColor Green
             }
-        }else {
-            "No duplicate found for date taken: $k" | Write-Host -ForegroundColor Gray
-        }
-    }
-}else {
-    foreach ($k in @( $sourceFiles.Keys )) {
-        if ($otherFiles.Contains($k)) {
-            $s = $sourceFiles[$k] # Source
-            $o = $otherFiles[$k] # Duplicate
-            if ($s.FullName -eq $o.FullName) {
-                continue # Ignore the same file!
-            }
-            "`nComparing $( $s.FullName ) and $( $o.FullName ) of date taken: $k" | Write-Host
-            "File $( $o.FullName ) is a duplicate of $( $s.FullName ). Date taken: $( $s.DateTaken )" | Write-Host -ForegroundColor Green
             # Construct an object that organizes the duplicates by DateTaken
             if (!$dups.Contains($k)) {
                 $dups[$k] = @( $s.FullName ) # Source file is always the first object in the array
@@ -198,9 +175,9 @@ if ($criteriaStrict) {
             $dups[$k] = @(
                 $dups[$k] | Select-Object -Unique # Ensure items are unique in array
             )
-        }else {
-            "No duplicate found for date taken: $k" | Write-Host -ForegroundColor Gray
         }
+    }else {
+        "No duplicate found for date taken: $k" | Write-Host -ForegroundColor Gray
     }
 }
 "There were $( $dups.Count ) duplicates found." | Write-Host -ForegroundColor Green
